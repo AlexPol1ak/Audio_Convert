@@ -20,6 +20,7 @@ def check_project_ffmpeg(pathffmpeg :str) -> str:
 
     codecfolder = 'ffmpeg/bin/ffmpeg.exe'
     codec = 'ffmpeg.exe'
+    print(os.path.abspath(pathffmpeg))
     if os.path.exists(pathffmpeg) and pathffmpeg.find(codecfolder)>0:
         return os.path.abspath(pathffmpeg.replace(codec, ''))
     else:
@@ -102,6 +103,9 @@ def connect_ffmpeg(pathffmpeg :str, backup :bool = False, buckup_folder :str = '
     else:
         print("Кодек ffmpeg уже добавлен в системную переменную path.")
         return True
+
+ffmepgpath = '../audiohandler/ffmpeg/bin/ffmpeg.exe'
+
 
 
 # Через bat

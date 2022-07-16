@@ -1,7 +1,9 @@
-from .codecsetting  import connect_ffmpeg
-connect_ffmpeg(pathffmpeg='./ffmpeg/bin/ffmpeg.exe', backup=False, forcebly=False)
+# Импорт функции подключения кодека ffmpeg и переменной содаржащей путь к кодеку
+from audiohandler.codecsetting import connect_ffmpeg, ffmepgpath
+connect_ffmpeg(pathffmpeg=ffmepgpath, backup=True, forcebly=False)
 
-from .database import audioDB
+# Импорт класс для создания базы данных
+from audiohandler import AudioDB
 
 from pydub import AudioSegment
 import os
@@ -13,7 +15,8 @@ from datetime import datetime
 class AudioConverter():
     """Аудио конвертер."""
 
-    amount = 0
+    number_converters = 0 # Количество объектов класса
+    number_db = 0 # Количество баз данных
 
     def __init__(self, setting_dict :dict = None):
         """Инициализация настроек конвертора."""
@@ -22,31 +25,50 @@ class AudioConverter():
 
         self.storage_path :str = '' # путь к директории для хранения оригинальных и конвертируемых треков
         self.move :bool = False # перемещать оригинальные треки в директорию оригиналов
-        self.write_db :bool = False # записывать данные в базу данных
+
+        self.db = None # База данных
+        self.wirte_db = False # Включить запись в бд ,если флаг включен
 
         # Устнановка настроек со словаря.
         self.install_settings(setting_dict)
         # Создание директорий для хранения треков если их не существует
         self.storage_dirs :dict = self.create_storage_dirs() # пути к директориям для хранения треков
         # Количество объектов класса
-        AudioConverter.amount += 1
+
+        AudioConverter.number_converters += 1
 
 
     def install_settings(self, sett_dict :dict) ->None:
         """Установка настроек конвертора."""
-
+        # Разбор словря с настройками и установка их в класс
         if isinstance(sett_dict, dict):
+
+            # Установка пути к директории для хранения треков, если он указан и существует
             path  = sett_dict.get('storage_path', '')
             if os.path.exists(path):
                 self.storage_path = path
 
+            # Установка флага перемещения оригинальных треков
             move = sett_dict.get('move', False)
             if isinstance(move, bool):
                 self.move = move
 
+            # Установка флага записи в базу данных. Установка пути к базе данных если указан и существует.
+            # Создание базы данных если она не существует.
             write_db = sett_dict.get('write_db', False)
-            if isinstance(write_db, bool):
-                self.write_db= write_db
+            if isinstance(write_db, bool) and write_db == True:
+                self.wirte_db = True
+
+                db_path = sett_dict.get('db_path', '')
+                if os.path.exists(db_path):
+                    # Создание базы данных в указаной директории
+                    self.db = AudioDB(db_path = db_path)
+                    AudioConverter.number_db += 1
+
+                else:
+                    # Создание базы данных в директории по умолчанию.
+                    self.db = AudioDB()
+                    AudioConverter.number_db += 1
 
 
     def create_storage_dirs(self) -> dict :
@@ -104,7 +126,7 @@ class AudioConverter():
         if format.lower() not in self.formats:
             raise Exception("AudioConverter.convert 'Unknown format'")
 
-        # Пути хрванения треков
+        # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
         trek_name: str = pathsound[pathsound.rfind("/") + 1:pathsound.rfind(".")].replace(" ", "_")
         trek_frmt: str = format.lower()
@@ -137,6 +159,9 @@ class AudioConverter():
             'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
                  }
 
+        # Запись в бд информации о конвертированном файле
+        if self.wirte_db == True:
+            self.db.insert_audio(result)
 
         return result
 
@@ -146,22 +171,11 @@ class AudioConverter():
         return self.formats
 
 
-    def create_db(self, path):
-        pass
-    # Создать папку , в ней бд, если папка существует нечего не создовать
-
-
-    def write_db(self, data :dict):
-        pass
-    # Записать данные в бд ,если бд есть
-
     @classmethod
-    def number_objects(cls):
-        return AudioConverter.amount
+    def show_objects(cls):
+        result = {
+            'AudioConverter': AudioConverter.number_converters,
+            'AudioDataBase': AudioConverter.number_db
+                }
 
-
-
-
-
-
-
+        return result
