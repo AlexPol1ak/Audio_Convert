@@ -9,6 +9,7 @@ from pydub import AudioSegment
 import os
 import shutil
 from datetime import datetime
+import subprocess
 
 
 
@@ -120,16 +121,16 @@ class AudioConverter():
         return result
 
 
-    def convert(self, pathsound :str, format :str, name :str = '', )->dict :
+    def convert(self, pathsound :str, frmt :str, name :str = '', )->dict :
         """Конвертирует аудио файл в указанный формат."""
 
-        if format.lower() not in self.formats:
+        if frmt.lower() not in self.formats:
             raise Exception("AudioConverter.convert 'Unknown format'")
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
         trek_name: str = pathsound[pathsound.rfind("/") + 1:pathsound.rfind(".")].replace(" ", "_")
-        trek_frmt: str = format.lower()
+        trek_frmt: str = frmt.lower()
 
         trek  = AudioSegment.from_file(pathsound)
         trek.export(f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}", format=trek_frmt)
@@ -177,5 +178,52 @@ class AudioConverter():
             'AudioConverter': AudioConverter.number_converters,
             'AudioDataBase': AudioConverter.number_db
                 }
+
+        return result
+
+    def extract_audio(self, pathvideo :str, frmt :str = 'mp3', name :str = '', ):
+        """Извлекает аудио из видео файла."""
+
+        if frmt.lower() not in self.formats:
+            raise Exception("AudioConverter.convert 'Unknown format'")
+
+        # Пути хранения треков
+        user_dirs :dict = self.create_user_dir(name=name)
+        video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
+        trek_frmt: str = frmt.lower()
+        print(user_dirs, video_name, trek_frmt)
+
+        subprocess.call(["ffmpeg", "-y", "-i", pathvideo, f"{user_dirs['user_dir_convert']}/{video_name}.{frmt}"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT)
+
+        if self.move == True:
+            # Переместить трек в директорию оригиналов,если он там существует- перезаписать
+            try:
+                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+            except shutil.Error:
+                os.remove(user_dirs['user_dir_orig'] + pathvideo[pathvideo.rfind("/"):])
+                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+        # Копировать если флаг False
+        else:
+            trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+
+        date: datetime = datetime.now()
+
+        result :dict = {
+            'user_name': name, # Имя пользователя
+            'trek_name': video_name, # Название видео
+            'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
+            'path_original': trek_orig, # Путь к оригинальному файлу
+            'path_convert': f"{user_dirs['user_dir_convert']}/{video_name}.{trek_frmt}", # Путь к конвертированному файлу
+            'format': trek_frmt, # Формат конвертированного файла
+            'date': str(date),  # Дата и время конвертирования
+            'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
+                 }
+
+        # Запись в бд информации о конвертированном файле
+        if self.wirte_db == True:
+            self.db.insert_audio(result)
+        print(result)
 
         return result
