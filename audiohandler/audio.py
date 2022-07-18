@@ -38,6 +38,10 @@ class AudioConverter():
 
         AudioConverter.number_converters += 1
 
+    def __repr__(self):
+        """Возвращает строку описания объекта."""
+        return 'audiohandler.audio.AudioConverter() object'
+
 
     def install_settings(self, sett_dict :dict) ->None:
         """Установка настроек конвертора."""
