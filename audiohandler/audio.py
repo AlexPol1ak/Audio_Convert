@@ -228,6 +228,5 @@ class AudioConverter():
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
             self.db.insert_audio(result)
-        print(result)
 
         return result
