@@ -1,9 +1,9 @@
 # Импорт функции подключения кодека ffmpeg и переменной содаржащей путь к кодеку
-from audiohandler.codecsetting import connect_ffmpeg, ffmepgpath
+from .codecsetting import connect_ffmpeg, ffmepgpath
 connect_ffmpeg(pathffmpeg=ffmepgpath, backup=True, forcebly=False)
 
 # Импорт класс для создания базы данных
-from audiohandler import AudioDB
+from .database.audioDB import AudioDB
 
 from pydub import AudioSegment
 import os

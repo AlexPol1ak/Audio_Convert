@@ -104,7 +104,7 @@ def connect_ffmpeg(pathffmpeg :str, backup :bool = False, buckup_folder :str = '
         print("Кодек ffmpeg уже добавлен в системную переменную path.")
         return True
 
-ffmepgpath = '../audiohandler/ffmpeg/bin/ffmpeg.exe'
+ffmepgpath = './ffmpeg/bin/ffmpeg.exe'
 
 
 

@@ -3,49 +3,54 @@ from sqlite3 import Error
 
 # База данных аудиофайлов в виде базы данных SQLite. Включается в аудиоконвертере по установленному флагу.
 
+class open_db():
+    """Контекстный менеджер для соединения с базой данных"""
+
+    def __init__(self,db_path :str):
+        self.db :str = db_path
+
+    def __enter__(self) ->sqlite3.Connection:
+        """Соединение с базой данных."""
+
+        self.conn :sqlite3.Connection = sqlite3.connect(self.db)
+
+        return self.conn
+
+    def __exit__(self, exc_type, exc_value, traceback)->bool:
+        """Закрытие соединения с базой данных."""
+
+        self.conn.close()
+        return False
+
+
 class AudioDB():
     """База данных для хранения информации о конвертированных и оригинальных файлах."""
     
-    def __init__(self, db_path="" ):
+    def __init__(self, db_path :str = ""):
         """Инициализация базы данных."""
 
-        self.name = 'audio.sqlite'
+        # Имя базы данных.
+        self.name :str= 'audio.sqlite'
+        # Путь к базе данных.
+        self.db_path :str= db_path
+        # Создаем базу данных, если ее нет, вставляем таблицу, и возвращаем путь к ней.
+        self.database :str= self.create_db(db_name=self.name, path=self.db_path)
 
-        # Если путь не задан, то база данных будет лежать в папке с программой.
-        self.conn = self.create_connection(db_file=self.name, path=db_path)
-        # Создаем таблицу в базе данных.
-        self.create_table()
 
+    def create_db(self, db_name :str, path:str = '') ->str:
+        """Создает базу данных, создает таблицу для хранения информации о аудио, возвращает путь к базе данных."""
 
-    def create_connection(self, db_file, path=''):
-        """ Создает соединение с базой данных. """
-
-        # Если бд не существует, то создаем ее.
         if path != '':
-            db_file = path + '/' + db_file
+            db_name :str = path + '/' + db_name
 
-        conn = None
-        try:
-            conn = sqlite3.connect(db_file)
-        except Error as e:
-            print(e)
-        return conn
-
-    
-    def execute_query(self,  query):
-        """Выполняет запрос к базе данных."""
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute(query)
-            self.conn.commit()
-        except Error as e:
-            print(e,'execute_queryErorr')
-        return cursor
+        db :str = self.create_table(db=db_name)
+        return db
 
 
-    def create_table(self):
-        """Создает таблицу в базе данных если не существует."""
-        query = """CREATE TABLE IF NOT EXISTS audio (
+    def create_table(self,db :str)->str:
+        """Создает таблицу в базе данных если ее не существует."""
+
+        query :str = """CREATE TABLE IF NOT EXISTS audio (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_name TEXT,
                             trek_name TEXT,
@@ -55,18 +60,36 @@ class AudioDB():
                             format TEXT,
                             date TEXT
                             )"""
-        self.execute_query(query)
+
+        with open_db(db) as conn:
+            try:
+                cursor :sqlite3.Cursor = conn.cursor()
+                cursor.execute(query)
+                conn.commit()
+                print('таблица создана')
+            except Error as e:
+                print(e, 'execute_queryErorr')
+        return db
 
 
-    def insert_audio(self, audio_dict):
+    def insert_audio(self, audio_dict :dict)->bool:
         """Вставляет данные о конвертированном файле в базу данных."""
 
-        query = f"""
-                INSERT INTO 
+        query :str = f"""
+                INSERT INTO
                 audio (user_name, trek_name, original_format, path_original, path_convert, format, date)
                 VALUES
-                ("{audio_dict['user_name']}", "{audio_dict['trek_name']}", 
-                "{audio_dict['original_format']}", "{audio_dict['path_original']}", 
+                ("{audio_dict['user_name']}", "{audio_dict['trek_name']}",
+                "{audio_dict['original_format']}", "{audio_dict['path_original']}",
                 "{audio_dict['path_convert']}", "{audio_dict['format']}", "{audio_dict['date']}")"""
-        self.execute_query(query)
+
+        with open_db(self.database) as conn:
+            try:
+                cursor :sqlite3.Cursor = conn.cursor()
+                cursor.execute(query)
+                conn.commit()
+            except Error as e:
+                print(e, 'execute_queryErorr')
+
+        return True
 
