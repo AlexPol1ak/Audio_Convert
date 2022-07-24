@@ -5,21 +5,55 @@ from datetime import datetime
 import subprocess
 
 from audiohandler.audio import AudioConverter
+from .database.aaudioDB import aAudioDB
 
 
 class AsyncAudioConverter(AudioConverter):
 
     def __init__(self, setting_dict :dict = None):
-        super().__init__(setting_dict)
+        super().__init__()
+        self.install_settings(sett_dict=setting_dict)
+
 
     def __repr__(self):
         return "Asynchronous version of AudioConverter"
+
+    def install_settings(self, sett_dict :dict) ->None:
+        """Установка настроек конвертора."""
+        # Разбор словря с настройками и установка их в класс
+        if isinstance(sett_dict, dict):
+
+            # Установка пути к директории для хранения треков, если он указан и существует
+            path  = sett_dict.get('storage_path', '')
+            if os.path.exists(path):
+                self.storage_path = path
+
+            # Установка флага перемещения оригинальных треков
+            move = sett_dict.get('move', False)
+            if isinstance(move, bool):
+                self.move = move
+
+            # Установка флага записи в базу данных. Установка пути к базе данных если указан и существует.
+            # Создание базы данных если она не существует.
+            write_db = sett_dict.get('write_db', False)
+            if isinstance(write_db, bool) and write_db == True:
+                self.wirte_db = True
+
+                db_path = sett_dict.get('db_path', '')
+                if os.path.exists(db_path):
+                    # Создание базы данных в указаной директории
+                    self.db = aAudioDB(db_path = db_path)
+                    AudioConverter.number_db += 1
+
+                else:
+                    # Создание базы данных в директории по умолчанию.
+                    self.db = aAudioDB()
+                    AudioConverter.number_db += 1
 
 
     async def aconvert(self, pathsound :str, frmt :str, name :str = '', )-> dict:
         """Асинхронное конвретирование аудиофайлов. Native coroutine function ."""
 
-        # print("async.Конвертируем трек: ", pathsound)
         await asyncio.sleep(1 / 10000)
 
         if frmt.lower() not in self.formats:
@@ -63,9 +97,8 @@ class AsyncAudioConverter(AudioConverter):
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
-            self.db.insert_audio(result)
+            await self.db.ainsert_audio(result)
 
-        # print("async.Окончено конвертирование: ", trek_name)
         return result
 
 
@@ -81,7 +114,7 @@ class AsyncAudioConverter(AudioConverter):
 
     async def aextract_audio(self, pathvideo :str, frmt :str = 'mp3', name :str = '', ):
         """Асинхронное извлечение аудио из видео файла. Native coroutine function ."""
-        print("Начало конвертирования: ", pathvideo)
+
         await asyncio.sleep(1/10000)
 
         if frmt.lower() not in self.formats:
@@ -122,8 +155,9 @@ class AsyncAudioConverter(AudioConverter):
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
-            self.db.insert_audio(result)
-        print("Конец конвертирования: ", pathvideo)
+
+            await self.db.ainsert_audio(result)
+
         return result
 
 
