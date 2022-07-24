@@ -1,6 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 
+
 # База данных аудиофайлов в виде базы данных SQLite. Включается в аудиоконвертере по установленному флагу.
 
 class open_db():
@@ -20,6 +21,7 @@ class open_db():
         """Закрытие соединения с базой данных."""
 
         self.conn.close()
+
         return False
 
 
@@ -66,14 +68,13 @@ class AudioDB():
                 cursor :sqlite3.Cursor = conn.cursor()
                 cursor.execute(query)
                 conn.commit()
-                print('таблица создана')
             except Error as e:
                 print(e, 'execute_queryErorr')
         return db
 
 
     def insert_audio(self, audio_dict :dict)->bool:
-        """Вставляет данные о конвертированном файле в базу данных."""
+        """Записывает данные о конвертированном файле в базу данных."""
 
         query :str = f"""
                 INSERT INTO
