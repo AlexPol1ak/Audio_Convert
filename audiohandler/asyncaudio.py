@@ -5,18 +5,22 @@ from datetime import datetime
 import subprocess
 
 from audiohandler.audio import AudioConverter
-from .database.aaudioDB import aAudioDB
+from audiohandler.database.aaudioDB import aAudioDB
 
 
 class AsyncAudioConverter(AudioConverter):
+    """Асинхронный аудио конвертер."""
 
     def __init__(self, setting_dict :dict = None):
-        super().__init__()
+        """Инициализация настроек конвертор."""
+
+        super().__init__(setting_dict=setting_dict)
         self.install_settings(sett_dict=setting_dict)
 
 
     def __repr__(self):
         return "Asynchronous version of AudioConverter"
+
 
     def install_settings(self, sett_dict :dict) ->None:
         """Установка настроек конвертора."""
@@ -24,7 +28,7 @@ class AsyncAudioConverter(AudioConverter):
         if isinstance(sett_dict, dict):
 
             # Установка пути к директории для хранения треков, если он указан и существует
-            path  = sett_dict.get('storage_path', '')
+            path = sett_dict.get('storage_path', '')
             if os.path.exists(path):
                 self.storage_path = path
 
@@ -54,13 +58,14 @@ class AsyncAudioConverter(AudioConverter):
     async def aconvert(self, pathsound :str, frmt :str, name :str = '', )-> dict:
         """Асинхронное конвретирование аудиофайлов. Native coroutine function ."""
 
-        await asyncio.sleep(1 / 10000)
+        await asyncio.sleep(1 / 1000)
 
-        if frmt.lower() not in self.formats:
-            raise Exception("AudioConverter.convert 'Unknown format'")
+        if frmt.lower() not in AsyncAudioConverter.formats:
+            raise Exception("AsyncAudioConverter.convert 'Unknown format'")
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
+
         trek_name: str = pathsound[pathsound.rfind("/") + 1:pathsound.rfind(".")].replace(" ", "_")
         trek_frmt: str = frmt.lower()
         outpt: str = f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}"
@@ -112,12 +117,13 @@ class AsyncAudioConverter(AudioConverter):
         task = asyncio.create_task(self.aconvert(pathsound=pathsound, frmt=frmt, name=name))
         return task
 
+
     async def aextract_audio(self, pathvideo :str, frmt :str = 'mp3', name :str = '', ):
         """Асинхронное извлечение аудио из видео файла. Native coroutine function ."""
 
         await asyncio.sleep(1/10000)
 
-        if frmt.lower() not in self.formats:
+        if frmt.lower() not in AsyncAudioConverter.formats:
             raise Exception("AudioConverter.convert 'Unknown format'")
 
         # Пути хранения треков
@@ -128,6 +134,8 @@ class AsyncAudioConverter(AudioConverter):
         subprocess.Popen(["ffmpeg", "-y", "-i", pathvideo, f"{user_dirs['user_dir_convert']}/{video_name}.{frmt}"],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.STDOUT)
+
+        await asyncio.sleep(1 / 10000)
 
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
@@ -155,7 +163,6 @@ class AsyncAudioConverter(AudioConverter):
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
-
             await self.db.ainsert_audio(result)
 
         return result
@@ -170,3 +177,23 @@ class AsyncAudioConverter(AudioConverter):
 
         task = asyncio.create_task(self.aextract_audio(pathvideo=pathvideo, frmt=frmt, name=name))
         return task
+
+
+    def aconvert_all(self, trackslist :list[str], frmt :str = 'mp3', name :str= ""):
+        """"Асинхронное конвертирование последовательнсти музыкальных треков."""
+
+        loop :asyncio = asyncio.get_event_loop()
+        tasks :list = []
+        if frmt.lower() not in AsyncAudioConverter.formats:
+            loop.close()
+            raise Exception("AsyncAudioConverter.convert 'Unknown format'")
+
+        for i in trackslist:
+            task = loop.create_task(self.aconvert(pathsound=i, frmt=frmt, name=name))
+            tasks.append(task)
+
+        # Список словарей с информацией о каждом конвертированном файле
+        result = loop.run_until_complete(asyncio.gather(*tasks))
+        loop.close()
+
+        return result

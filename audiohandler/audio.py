@@ -1,9 +1,9 @@
 # Импорт функции подключения кодека ffmpeg и переменной содаржащей путь к кодеку
-from .codecsetting import connect_ffmpeg, ffmepgpath
+from audiohandler.codecsetting import connect_ffmpeg, ffmepgpath
 connect_ffmpeg(pathffmpeg=ffmepgpath, backup=True, forcebly=False)
 
 # Импорт класс для создания базы данных
-from .database.audioDB import AudioDB
+from audiohandler.database.audioDB import AudioDB
 
 from pydub import AudioSegment
 import os
@@ -18,11 +18,10 @@ class AudioConverter():
 
     number_converters = 0 # Количество объектов класса
     number_db = 0 # Количество баз данных
+    formats: list[str] = ['ac3', 'asf', 'Flac', 'mp3', 'mp4', 'mov', "ogg", 'wav', ]  # '-AAC' '-DTS' '-wma'
 
     def __init__(self, setting_dict :dict = None):
         """Инициализация настроек конвертора."""
-
-        self.formats :list[str] = ['ac3', 'asf', 'Flac', 'mp3', 'mp4', 'mov', "ogg", 'wav', ]  # '-AAC' '-DTS' '-wma'
 
         self.storage_path :str = '' # путь к директории для хранения оригинальных и конвертируемых треков
         self.move :bool = False # перемещать оригинальные треки в директорию оригиналов
@@ -46,10 +45,11 @@ class AudioConverter():
     def install_settings(self, sett_dict :dict) ->None:
         """Установка настроек конвертора."""
         # Разбор словря с настройками и установка их в класс
+
         if isinstance(sett_dict, dict):
 
             # Установка пути к директории для хранения треков, если он указан и существует
-            path  = sett_dict.get('storage_path', '')
+            path = sett_dict.get('storage_path', '')
             if os.path.exists(path):
                 self.storage_path = path
 
@@ -121,14 +121,13 @@ class AudioConverter():
 
         # Возвращение словаря с путями директорий для хранения треков
         result = {'name': name, 'user_dir_orig': user_dir_original, 'user_dir_convert': user_dir_convert}
-
         return result
 
 
     def convert(self, pathsound :str, frmt :str, name :str = '', )->dict :
         """Конвертирует аудио файл в указанный формат."""
 
-        if frmt.lower() not in self.formats:
+        if frmt.lower() not in AudioConverter.formats:
             raise Exception("AudioConverter.convert 'Unknown format'")
 
         # Пути хранения треков
@@ -171,31 +170,17 @@ class AudioConverter():
         return result
 
 
-    def available_formats(self) -> list:
-        """Возвращает список доступных форматов для конвертирования."""
-        return self.formats
-
-
-    @classmethod
-    def show_objects(cls):
-        result = {
-            'AudioConverter': AudioConverter.number_converters,
-            'AudioDataBase': AudioConverter.number_db
-                }
-
-        return result
 
     def extract_audio(self, pathvideo :str, frmt :str = 'mp3', name :str = '', ):
         """Извлекает аудио из видео файла."""
 
-        if frmt.lower() not in self.formats:
+        if frmt.lower() not in AudioConverter.formats:
             raise Exception("AudioConverter.convert 'Unknown format'")
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
         video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
         trek_frmt: str = frmt.lower()
-        print(user_dirs, video_name, trek_frmt)
 
         subprocess.call(["ffmpeg", "-y", "-i", pathvideo, f"{user_dirs['user_dir_convert']}/{video_name}.{frmt}"],
                         stdout=subprocess.DEVNULL,
@@ -228,5 +213,21 @@ class AudioConverter():
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
             self.db.insert_audio(result)
+
+        return result
+
+
+    @classmethod
+    def available_formats(self) -> list:
+        """Возвращает список доступных форматов для конвертирования."""
+        return AudioConverter.formats
+
+
+    @classmethod
+    def show_objects(cls):
+        result = {
+            'AudioConverter': AudioConverter.number_converters,
+            'AudioDataBase': AudioConverter.number_db
+                }
 
         return result

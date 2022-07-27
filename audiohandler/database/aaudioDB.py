@@ -1,7 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 import asyncio
-from .audioDB import AudioDB
+from audiohandler.database.audioDB import AudioDB
 
 
 # База данных аудиофайлов в виде базы данных SQLite. Включается в аудиоконвертере по установленному флагу.
@@ -12,17 +12,19 @@ class aopen_db():
     def __init__(self, db_path: str):
         self.db: str = db_path
 
+
     async def __aenter__(self) -> sqlite3.Connection:
         """Соединение с базой данных."""
-
+        await asyncio.sleep(1 / 1000)
         self.conn: sqlite3.Connection = sqlite3.connect(self.db)
 
         return self.conn
 
+
     async def __aexit__(self, exc_type, exc_value, traceback) -> bool:
         """Закрытие соединения с базой данных."""
 
-        await asyncio.sleep(1 / 10000)
+        await asyncio.sleep(1 / 1000)
         self.conn.close()
 
         return False
@@ -36,9 +38,11 @@ class aAudioDB(AudioDB):
         """Инициализация базы данных."""
         super().__init__(db_path)
 
+
     async def ainsert_audio(self, audio_dict: dict) -> bool:
         """Записывает данные о конвертированном файле в базу данных."""
 
+        await asyncio.sleep(1 / 1000)
         query: str = f"""
                 INSERT INTO
                 audio (user_name, trek_name, original_format, path_original, path_convert, format, date)
@@ -52,7 +56,7 @@ class aAudioDB(AudioDB):
                 cursor: sqlite3.Cursor = conn.cursor()
                 cursor.execute(query)
                 conn.commit()
-                print('Записан в бд', audio_dict['path_original'])
             except Error as e:
                 print(e, 'execute_queryErorr')
+
         return True
