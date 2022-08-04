@@ -71,6 +71,7 @@ class AsyncAudioConverter(AudioConverter):
         outpt: str = f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}"
 
         # Конвертируем трек
+
         result_subprocess = subprocess.Popen(['ffmpeg', '-i', pathsound, outpt], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
