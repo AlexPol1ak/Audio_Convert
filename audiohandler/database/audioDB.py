@@ -60,7 +60,7 @@ class AudioDB():
                             path_original TEXT,
                             path_convert TEXT,
                             format TEXT,
-                            date TEXT
+                            date DateTime
                             )"""
 
         with open_db(db) as conn:

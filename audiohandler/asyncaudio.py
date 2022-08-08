@@ -96,7 +96,7 @@ class AsyncAudioConverter(AudioConverter):
             'path_convert': f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}",
             # Путь к конвертированному файлу
             'format': trek_frmt,  # Формат конвертированного файла
-            'date': str(date),  # Дата и время конвертирования
+            'date': date,  # Дата и время конвертирования
             'move': self.move,  # Флаг перемещения исходного файла в директорию оригиналов
             'result_subprocess': result_subprocess  # Результат работы субпроцесса
         }
