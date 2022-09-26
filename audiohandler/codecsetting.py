@@ -1,50 +1,47 @@
 import os
 import subprocess
+import importlib.resources
 
-
-def chek_system_ffmpeg() ->bool:
-    """Проверяет наличие кодека ffmpeg в проекте и в системной переменной path Windows."""
-
-    codecfolder = 'ffmpeg/bin'
-    # Значение системной переменной
-    systempath  = os.path.expandvars("$PATH")
-
-    if systempath.find(codecfolder.replace('/', '\\'))>0:
-        return True
-    else:
-        return False
-
-
-def check_project_ffmpeg(pathffmpeg :str) -> str:
+def check_project_ffmpeg(pathffmpeg :str = None) -> str:
     """Проверяет наличие кодека ffmpeg в проекте."""
 
     codecfolder = 'ffmpeg/bin/ffmpeg.exe'
     codec = 'ffmpeg.exe'
-    print(os.path.abspath(pathffmpeg))
-    if os.path.exists(pathffmpeg) and pathffmpeg.find(codecfolder)>0:
-        return os.path.abspath(pathffmpeg.replace(codec, ''))
+
+    # Если не указан путь к кодеку- проверят наличие кодека в текущем проекте
+    if not pathffmpeg:
+        scr_dir :str = os.path.dirname(os.path.realpath(__file__))
+        codecfolder = os.path.join(scr_dir, 'ffmpeg\\bin\\ffmpeg.exe' )
+        if os.path.exists(codecfolder):
+            return os.path.split(os.path.abspath(codecfolder))[0]
+        else:
+            raise FileNotFoundError (" Ffmpeg codeс not found in project")
+
+    # Если указан путь - проверяет наличие кодека по указанному пути, и соответствие директорий согласно требованиям
+    # библиотеки pydub
+    elif pathffmpeg:
+        if os.path.exists(pathffmpeg) and  pathffmpeg.find(codecfolder)>0:
+            return os.path.split(os.path.abspath(pathffmpeg))[0]
+        else:
+            raise FileNotFoundError (" Path specified incorrectly")
+
     else:
-        raise FileNotFoundError("Не найден кодек ffmpeg в проекте.")
+        raise FileNotFoundError("Ffmpeg codec not found")
 
 
-def create_backup_dir(path :str = "") ->str:
-    """Создает папку для хранения резервной копии системной переменной Windows - path."""
+def create_backup_dir() ->str:
+    """Создает папку для хранения резервной копии системной переменной path."""
 
     name = 'backup_system_path'
-    if path != '' and isinstance(path, str) and os.path.exists(path):
-        backup_folder :str= f'{path}/{name}'
-        try:
-            os.mkdir(backup_folder)
-        except FileExistsError:
-            pass
-        return backup_folder
 
-    else:
-        try:
-            os.mkdir(name)
-        except FileExistsError:
-            pass
-        return name
+    os.chdir('..')
+    try:
+        os.mkdir(name)
+    except FileExistsError:
+        pass
+    path  = os.path.join(os.getcwd(), name)
+
+    return path
 
 
 def create_backup_systempath(directory :str) ->str:
@@ -60,6 +57,7 @@ def create_backup_systempath(directory :str) ->str:
         pathlist.append(i)
     pathlist.pop(-1)
 
+    # Запись всех значений в файл txt.
     recovery_file :str = f"{directory}/Path.txt"
     with open(recovery_file, "w", encoding="utf-8") as f1:
         for i in pathlist:
@@ -67,7 +65,27 @@ def create_backup_systempath(directory :str) ->str:
     return os.path.abspath(recovery_file)
 
 
-def addpath(path_ffmpeg :str) ->str:
+def create_recovery_bat(backup_dir :str ,backup_sys_path :str) ->None:
+    """Создает bat файл востановления."""
+
+    # Создание bat файла  командой создания системной переменной Path
+    file = f"{backup_dir}\\run_recovery.bat"
+    with open(file, 'w', encoding='utf-8') as bat:
+
+        with open(backup_sys_path, 'r', encoding='utf-8') as txt:
+
+            paths_lst :list = txt.readlines()
+            paths_str :str = ';'.join(paths_lst).replace('\n', '')
+            command = f'SETX Path "{paths_str}" /M'
+            bat.write(command)
+
+    # Запись напоминания о запуске с правами администратора
+    instruction = f"{backup_dir}\\read.txt"
+    with open(instruction, 'w', encoding='utf-8') as instr:
+        instr.write('Run the run_recovery.bat with administrator rights!!!')
+
+
+def addpath(pathffmpeg :str) ->str:
     """Добалвяет путь в системную переменную path Windows."""
 
     # cmd = f'SETX MY_PATH "{path_ffmpeg}";"%PATH%" /M'
@@ -76,44 +94,50 @@ def addpath(path_ffmpeg :str) ->str:
     systempath :str = systempath.replace("C:\Windows", '%SystemRoot%')
 
     # bytes, ecoding='cp866'
-    result :bytes = subprocess.check_output(['SETX', 'Path', f'{path_ffmpeg};{systempath}', '/M'], shell=True)
-    reslultstr :str = result.decode("cp866")
+    result :bytes = subprocess.check_output(['SETX', 'Path', f'{pathffmpeg};{systempath}', '/M'], shell=True)
+    try:
+        reslultstr :str = result.decode("cp866")
+    except:
+        reslultstr = '$Успех. Указанное значение сохранено.'
     return reslultstr + "Перезапустите систему."
 
 
 # Позволяет использвать кодек с бибилотекой pudub.Audiosigment и из командной строки
-def connect_ffmpeg(pathffmpeg :str, backup :bool = False, buckup_folder :str = '' ,forcebly :bool = False):
-    """Записывает кодек ffmpeg в системную переменную path Windows.
-    Создает резервную копию системной переменной path."""
+def connect_ffmpeg(pathffmpeg=None, backup=False) -> dict:
+    """Проверяет наличие в системе кодека ffmpeg.Пытается подключить его при его отсуствии."""
 
-    flag_codec :bool = chek_system_ffmpeg()
-    # Принудительная перезапись кодека
-    if forcebly:
-        flag_codec = False
+    info = {}
+    # Проверить есть ли в системе кодек ffmpeg.
+    try:
+        cmd = 'ffmpeg -version'
+        result  = subprocess.check_output(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        info.update({'status': result})
+    except subprocess.CalledProcessError:
 
-    if flag_codec == False:
-        ffmpeg :str= check_project_ffmpeg(pathffmpeg)
+        # Если в системе нет кодека - проверить есть ли он в проекте или по указанному пути
+        # Если указан pathffmpeg -проверяет наличие кодека в нем, если  не указан pathffmpeg- проверяет в
+        # директории audiohandler. Если кодек не найден - генерирует исключение
+        result = check_project_ffmpeg(pathffmpeg=pathffmpeg)
+
+        # Если backup = True - создать резервную копию системной переменной Path.
         if backup:
-            backupfolder :str = create_backup_dir(buckup_folder)
-            backuppath :str = create_backup_systempath(backupfolder)
+            # Создает директорию с резервными файлами
+            backup_dir :str = create_backup_dir()
+            # Создает txt файл со значениями сист прем. Path
+            backup_sys_path :str = create_backup_systempath(directory=backup_dir)
+            # Создает bat файл c командой и значениями переменной Path,
+            # запуск которого создаст сист. перем. Path. Создает напоминание о запуске с админ. правамию
+            create_recovery_bat(backup_dir=backup_dir, backup_sys_path=backup_sys_path)
 
-        result = addpath(ffmpeg)
-        print(result)
-        return True
-    else:
-        print("Кодек ffmpeg уже добавлен в системную переменную path.")
-        return True
+            info.update({'backup': backup_sys_path})
+        # Запись в сист. перем. Path путь к кодеку (путь к файлу ffmpeg.exe).
+        try:
+            state = addpath(pathffmpeg=result)
+            print(state)
+        except:
+            raise Exception ("Error adding codec to system variable")
+        else:
+            info.update({'status': state})
 
-ffmepgpath = './ffmpeg/bin/ffmpeg.exe'
+    return info
 
-
-
-# Через bat
-# def addpath(path_ffmpeg):
-#     file_name = "add_ffmpeg_system_path.bat"
-#     command = f'SETX MY_PATH "%PATH%";"{path_ffmpeg}" /M'
-#     with open(file_name, "w", encoding="utf-8") as f:
-#         f.write('@echo\n')
-#         f.write(command)
-#   # os.system(file_name)
-#     return file_name

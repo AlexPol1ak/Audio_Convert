@@ -1,6 +1,6 @@
-# Импорт функции подключения кодека ffmpeg и переменной содаржащей путь к кодеку
-from audiohandler.codecsetting import connect_ffmpeg, ffmepgpath
-connect_ffmpeg(pathffmpeg=ffmepgpath, backup=True, forcebly=False)
+# Импорт функции подключения кодека ffmpeg
+from audiohandler.codecsetting import connect_ffmpeg
+connect_ffmpeg()
 
 # Импорт класс для создания базы данных
 from audiohandler.database.audioDB import AudioDB
