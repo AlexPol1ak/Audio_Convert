@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from sqlite3 import Error
 
@@ -43,7 +44,8 @@ class AudioDB():
         """Создает базу данных, создает таблицу для хранения информации о аудио, возвращает путь к базе данных."""
 
         if path != '':
-            db_name :str = path + '/' + db_name
+            # db_name :str = path + '/' + db_name
+              db_name = os.path.join(path, db_name)
 
         db :str = self.create_table(db=db_name)
         return db
