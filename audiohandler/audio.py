@@ -1,9 +1,9 @@
 # Импорт функции подключения кодека ffmpeg
-from audiohandler.codecsetting import connect_ffmpeg
+from .codecsetting import connect_ffmpeg
 connect_ffmpeg()
 
 # Импорт класс для создания базы данных
-from audiohandler.database.audioDB import AudioDB
+from .database.audioDB import AudioDB
 
 from pydub import AudioSegment
 import os
@@ -84,8 +84,10 @@ class AudioConverter():
 
         # Если укзан путь- дериктории для хранения треков создаются по указанному пути
         if self.storage_path != '' and os.path.exists(self.storage_path):
-            dir_original = self.storage_path + '/' + dir_original
-            dir_convert = self.storage_path + '/' + dir_convert
+            # dir_original = self.storage_path + '/' + dir_original
+            # dir_convert = self.storage_path + '/' + dir_convert
+            dir_original = os.path.join(self.storage_path, dir_original)
+            dir_convert = os.path.join(self.storage_path, dir_convert)
 
         # Создает директории для хранения треков если их не существует
         if not os.path.isdir(dir_original) and not os.path.isdir(dir_convert):
@@ -106,8 +108,11 @@ class AudioConverter():
 
         # Cоздается путь с пользовательской директорией в директории хранения треков
         if name != '':
-            user_dir_original = self.storage_dirs['dir_original'] + '/' + name
-            user_dir_convert = self.storage_dirs['dir_convert'] + '/' + name
+            # user_dir_original = self.storage_dirs['dir_original'] + '/' + name
+            # user_dir_convert = self.storage_dirs['dir_convert'] + '/' + name
+            user_dir_original = os.path.normpath(os.path.join(self.storage_dirs['dir_original'], name))
+            user_dir_convert = os.path.normpath(os.path.join(self.storage_dirs['dir_convert'], name))
+
 
             # Создаются пользовательские директории если их не существует
             if not os.path.isdir(user_dir_original) and not os.path.isdir(user_dir_convert):
@@ -136,19 +141,25 @@ class AudioConverter():
         trek_frmt: str = frmt.lower()
 
         trek  = AudioSegment.from_file(pathsound)
-        trek.export(f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}", format=trek_frmt)
+        export_path = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
+        # trek.export(f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}", format=trek_frmt)
+        trek.export(export_path, format=trek_frmt)
 
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+                # trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+
             except shutil.Error:
                 os.remove(user_dirs['user_dir_orig'] + pathsound[pathsound.rfind("/"):])
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+                # trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+            trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
 
         date: datetime = datetime.now()
 
@@ -157,7 +168,7 @@ class AudioConverter():
             'trek_name': trek_name, # Название трека
             'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
             'path_original': trek_orig, # Путь к оригинальному файлу
-            'path_convert': f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}", # Путь к конвертированному файлу
+            'path_convert': export_path, # Путь к конвертированному файлу
             'format': trek_frmt, # Формат конвертированного файла
             'date': date,  # Дата и время конвертирования
             'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
@@ -166,7 +177,7 @@ class AudioConverter():
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
             self.db.insert_audio(result)
-
+        # breakpoint()
         return result
 
 
@@ -181,21 +192,22 @@ class AudioConverter():
         user_dirs :dict = self.create_user_dir(name=name)
         video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
         trek_frmt: str = frmt.lower()
+        output_v = f"{os.path.join(user_dirs['user_dir_convert'], video_name)}.{frmt}"
 
-        subprocess.call(["ffmpeg", "-y", "-i", pathvideo, f"{user_dirs['user_dir_convert']}/{video_name}.{frmt}"],
+        subprocess.call(["ffmpeg", "-y", "-i", pathvideo, output_v],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.STDOUT)
 
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
             except shutil.Error:
                 os.remove(user_dirs['user_dir_orig'] + pathvideo[pathvideo.rfind("/"):])
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig']).replace('\\', "/")
+            trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
 
         date: datetime = datetime.now()
 
@@ -204,7 +216,7 @@ class AudioConverter():
             'trek_name': video_name, # Название видео
             'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
             'path_original': trek_orig, # Путь к оригинальному файлу
-            'path_convert': f"{user_dirs['user_dir_convert']}/{video_name}.{trek_frmt}", # Путь к конвертированному файлу
+            'path_convert': output_v, # Путь к конвертированному файлу
             'format': trek_frmt, # Формат конвертированного файла
             'date': date,  # Дата и время конвертирования
             'move': self.move # Флаг перемещения исходного файла в директорию оригиналов

@@ -1,6 +1,5 @@
 import os
 import subprocess
-import importlib.resources
 
 def check_project_ffmpeg(pathffmpeg :str = None) -> str:
     """Проверяет наличие кодека ffmpeg в проекте."""
@@ -8,7 +7,7 @@ def check_project_ffmpeg(pathffmpeg :str = None) -> str:
     codecfolder = 'ffmpeg/bin/ffmpeg.exe'
     codec = 'ffmpeg.exe'
 
-    # Если не указан путь к кодеку- проверят наличие кодека в текущем проекте
+    # Если не указан путь к кодеку- проверит наличие кодека в текущем проекте
     if not pathffmpeg:
         scr_dir :str = os.path.dirname(os.path.realpath(__file__))
         codecfolder = os.path.join(scr_dir, 'ffmpeg\\bin\\ffmpeg.exe' )
