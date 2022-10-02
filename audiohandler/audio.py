@@ -49,8 +49,8 @@ class AudioConverter():
         if isinstance(sett_dict, dict):
 
             # Установка пути к директории для хранения треков, если он указан и существует
-            path = sett_dict.get('storage_path', '')
-            if os.path.exists(path):
+            path = os.path.normpath(sett_dict.get('storage_path', ''))
+            if os.path.exists(path) and path != '.':
                 self.storage_path = path
 
             # Установка флага перемещения оригинальных треков
@@ -64,8 +64,8 @@ class AudioConverter():
             if isinstance(write_db, bool) and write_db == True:
                 self.wirte_db = True
 
-                db_path = sett_dict.get('db_path', '')
-                if os.path.exists(db_path):
+                db_path = os.path.normpath(sett_dict.get('db_path', ''))
+                if os.path.exists(db_path) and db_path != '.':
                     # Создание базы данных в указаной директории
                     self.db = AudioDB(db_path = db_path)
                     AudioConverter.number_db += 1
@@ -81,7 +81,6 @@ class AudioConverter():
 
         dir_original = 'original_tracks'
         dir_convert = 'convertible_tracks'
-
         # Если укзан путь- дериктории для хранения треков создаются по указанному пути
         if self.storage_path != '' and os.path.exists(self.storage_path):
             # dir_original = self.storage_path + '/' + dir_original
@@ -110,8 +109,8 @@ class AudioConverter():
         if name != '':
             # user_dir_original = self.storage_dirs['dir_original'] + '/' + name
             # user_dir_convert = self.storage_dirs['dir_convert'] + '/' + name
-            user_dir_original = os.path.normpath(os.path.join(self.storage_dirs['dir_original'], name))
-            user_dir_convert = os.path.normpath(os.path.join(self.storage_dirs['dir_convert'], name))
+            user_dir_original = os.path.join(self.storage_dirs['dir_original'], name)
+            user_dir_convert = os.path.join(self.storage_dirs['dir_convert'], name)
 
 
             # Создаются пользовательские директории если их не существует
@@ -126,6 +125,7 @@ class AudioConverter():
 
         # Возвращение словаря с путями директорий для хранения треков
         result = {'name': name, 'user_dir_orig': user_dir_original, 'user_dir_convert': user_dir_convert}
+
         return result
 
 
