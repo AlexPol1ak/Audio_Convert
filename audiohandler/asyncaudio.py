@@ -4,8 +4,8 @@ import shutil
 from datetime import datetime
 import subprocess
 
-from audiohandler.audio import AudioConverter
-from audiohandler.database.aaudioDB import aAudioDB
+from .audio import AudioConverter
+from .database.aaudioDB import aAudioDB
 
 
 class AsyncAudioConverter(AudioConverter):
@@ -65,9 +65,9 @@ class AsyncAudioConverter(AudioConverter):
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
-        trek_name: str = pathsound[pathsound.rfind("/") + 1:pathsound.rfind(".")].replace(" ", "_")
+        trek_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
         trek_frmt: str = frmt.lower()
-        # outpt: str = f"{user_dirs['user_dir_convert']}/{trek_name}.{trek_frmt}"
+
         outpt:str = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
 
         # Конвертируем трек
@@ -78,11 +78,9 @@ class AsyncAudioConverter(AudioConverter):
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                # trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
                 trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
             except shutil.Error:
-                os.remove(user_dirs['user_dir_orig'] + pathsound[pathsound.rfind("/"):])
-                # trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig']).replace('\\', "/")
+                os.remove(os.path.join(user_dirs['user_dir_orig'],os.path.split(pathsound)[1]))
                 trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
