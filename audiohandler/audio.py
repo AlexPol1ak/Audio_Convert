@@ -18,7 +18,7 @@ class AudioConverter():
 
     number_converters = 0 # Количество объектов класса
     number_db = 0 # Количество баз данных
-    formats: list[str] = ['ac3', 'asf', 'Flac', 'mp3', 'mp4', 'mov', "ogg", 'wav', ]  # '-AAC' '-DTS' '-wma'
+    formats = ['ac3', 'asf', 'Flac', 'mp3', 'mp4', 'mov', "ogg", 'wav', ]  # '-AAC' '-DTS' '-wma'
 
     def __init__(self, setting_dict :dict = None):
         """Инициализация настроек конвертора."""
@@ -233,7 +233,7 @@ class AudioConverter():
             'convert_size_b': convert_size_b,  # Рамзер конвертированного файла в байтах.
             'convert_size_mb': convert_size_mb,  # Рамзер конвертированного файла в мегабайтах.
         }
-        print(audio_info)
+
         return audio_info
 
 

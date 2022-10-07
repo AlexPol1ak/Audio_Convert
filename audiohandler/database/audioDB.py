@@ -63,9 +63,9 @@ class AudioDB():
                             format TEXT,
                             date DateTime,
                             original_size_b INT,
-                            original_size_mb INT,
+                            original_size_mb FLOAT,
                             convert_size_b INT,
-                            convert_size_mb INT
+                            convert_size_mb FLOAT
                             )"""
 
         with open_db(db) as conn:
