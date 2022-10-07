@@ -44,7 +44,6 @@ class AudioDB():
         """Создает базу данных, создает таблицу для хранения информации о аудио, возвращает путь к базе данных."""
 
         if path != '':
-            # db_name :str = path + '/' + db_name
               db_name = os.path.join(path, db_name)
 
         db :str = self.create_table(db=db_name)
@@ -62,7 +61,11 @@ class AudioDB():
                             path_original TEXT,
                             path_convert TEXT,
                             format TEXT,
-                            date DateTime
+                            date DateTime,
+                            original_size_b INT,
+                            original_size_mb INT,
+                            convert_size_b INT,
+                            convert_size_mb INT
                             )"""
 
         with open_db(db) as conn:
@@ -80,11 +83,15 @@ class AudioDB():
 
         query :str = f"""
                 INSERT INTO
-                audio (user_name, trek_name, original_format, path_original, path_convert, format, date)
+                audio (user_name, trek_name, original_format, path_original, path_convert, format, date,
+                original_size_b, original_size_mb, convert_size_b, convert_size_mb )
                 VALUES
                 ("{audio_dict['user_name']}", "{audio_dict['trek_name']}",
                 "{audio_dict['original_format']}", "{audio_dict['path_original']}",
-                "{audio_dict['path_convert']}", "{audio_dict['format']}", "{audio_dict['date']}")"""
+                "{audio_dict['path_convert']}", "{audio_dict['format']}", "{audio_dict['date']}",
+                "{audio_dict['original_size_b']}", "{audio_dict['original_size_mb']}","{audio_dict['convert_size_b']}",
+                "{audio_dict['convert_size_mb']}"
+                )"""
 
         with open_db(self.database) as conn:
             try:

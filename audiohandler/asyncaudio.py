@@ -67,11 +67,9 @@ class AsyncAudioConverter(AudioConverter):
         user_dirs :dict = self.create_user_dir(name=name)
         trek_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
         trek_frmt: str = frmt.lower()
-
         outpt:str = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
 
         # Конвертируем трек
-
         result_subprocess = subprocess.Popen(['ffmpeg', '-i', pathsound, outpt], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
@@ -85,21 +83,13 @@ class AsyncAudioConverter(AudioConverter):
         # Копировать если флаг False
         else:
             trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
+        await asyncio.sleep(1 / 1000)
 
-        date: datetime = datetime.now()
-
-        result: dict = {
-            'user_name': name,  # Имя пользователя
-            'trek_name': trek_name,  # Название трека
-            'original_format': trek_orig[trek_orig.rfind(".") + 1:],  # Формат исходного файла
-            'path_original': trek_orig,  # Путь к оригинальному файлу
-            'path_convert': outpt,
-            # Путь к конвертированному файлу
-            'format': trek_frmt,  # Формат конвертированного файла
-            'date': date,  # Дата и время конвертирования
-            'move': self.move,  # Флаг перемещения исходного файла в директорию оригиналов
-            'result_subprocess': result_subprocess  # Результат работы субпроцесса
-        }
+        await asyncio.sleep(1 / 1000)
+        # Запись данных об операции в словарь.
+        result: dict = self.get_audio_info(user_name=name, trek_name=trek_name, path_original=trek_orig, frmt=trek_frmt,
+                                           path_convert=outpt)
+        result.update(result_subprocess=result_subprocess) #Резульатат работы субпроцесса
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
@@ -131,7 +121,6 @@ class AsyncAudioConverter(AudioConverter):
         user_dirs :dict = self.create_user_dir(name=name)
         video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
         trek_frmt: str = frmt.lower()
-
         output = f"{os.path.join(user_dirs['user_dir_convert'], video_name)}.{frmt}"
 
         subprocess.Popen(["ffmpeg", "-y", "-i", pathvideo, output],
@@ -151,18 +140,9 @@ class AsyncAudioConverter(AudioConverter):
         else:
             trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
 
-        date: datetime = datetime.now()
-
-        result :dict = {
-            'user_name': name, # Имя пользователя
-            'trek_name': video_name, # Название видео
-            'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
-            'path_original': trek_orig, # Путь к оригинальному файлу
-            'path_convert': output, # Путь к конвертированному файлу
-            'format': trek_frmt, # Формат конвертированного файла
-            'date': date,  # Дата и время конвертирования
-            'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
-                 }
+        # Запись данных об операции в словарь.
+        result: dict = self.get_audio_info(user_name=name, trek_name=video_name, path_original=trek_orig, frmt=trek_frmt,
+                                           path_convert=output)
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:

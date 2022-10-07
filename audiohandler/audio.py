@@ -135,12 +135,13 @@ class AudioConverter():
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
+
         #Чистое название аудиофайла  полученое из пути, без формата и пути . Пример. << testsong1
         trek_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
         trek_frmt: str = frmt.lower()
-
-        trek  = AudioSegment.from_file(pathsound)
         export_path = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
+
+        trek = AudioSegment.from_file(pathsound)
         trek.export(export_path, format=trek_frmt)
 
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
@@ -152,24 +153,13 @@ class AudioConverter():
             except shutil.Error:
                 os.remove(os.path.join(user_dirs['user_dir_orig'],os.path.split(pathsound)[1]))
                 trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
-
         # Копировать если флаг False
         else:
             trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
 
-        date: datetime = datetime.now()
-
-        result :dict = {
-            'user_name': name, # Имя пользователя
-            'trek_name': trek_name, # Название трека
-            'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
-            'path_original': trek_orig, # Путь к оригинальному файлу
-            'path_convert': export_path, # Путь к конвертированному файлу
-            'format': trek_frmt, # Формат конвертированного файла
-            'date': date,  # Дата и время конвертирования
-            'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
-                 }
-
+        # Запись данных об операции в словарь.
+        result :dict = self.get_audio_info(user_name=name,trek_name=trek_name,path_original=trek_orig,frmt=trek_frmt,
+                                           path_convert=export_path)
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
             self.db.insert_audio(result)
@@ -186,7 +176,8 @@ class AudioConverter():
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
-        video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
+        # получение чистого имени файла и формата.
+        video_name: str = os.path.splitext(os.path.split(pathvideo)[1].replace(" ", "_"))[0]
         trek_frmt: str = frmt.lower()
         output_v = f"{os.path.join(user_dirs['user_dir_convert'], video_name)}.{frmt}"
 
@@ -205,24 +196,45 @@ class AudioConverter():
         else:
             trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
 
-        date: datetime = datetime.now()
-
-        result :dict = {
-            'user_name': name, # Имя пользователя
-            'trek_name': video_name, # Название видео
-            'original_format': trek_orig[trek_orig.rfind(".")+1 :], # Формат исходного файла
-            'path_original': trek_orig, # Путь к оригинальному файлу
-            'path_convert': output_v, # Путь к конвертированному файлу
-            'format': trek_frmt, # Формат конвертированного файла
-            'date': date,  # Дата и время конвертирования
-            'move': self.move # Флаг перемещения исходного файла в директорию оригиналов
-                 }
+        # Запись данных об операции в словарь.
+        result: dict = self.get_audio_info(user_name=name, trek_name=video_name, path_original=trek_orig, frmt=trek_frmt,
+                                           path_convert=output_v)
 
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
             self.db.insert_audio(result)
 
         return result
+
+    def get_audio_info(self, *, user_name:str, trek_name:str, path_original:str, frmt:str, path_convert:str) ->dict:
+
+        path_original = os.path.normpath(path_original)
+        path_convert = os.path.normpath(path_convert)
+
+        date: datetime = datetime.now()
+
+        orig_size_b = os.path.getsize(path_original)
+        orig_size_mb = round((orig_size_b / 1024 / 1024), ndigits=2)
+        convert_size_b = os.path.getsize(path_convert)
+        convert_size_mb = round((convert_size_b / 1024 / 1024), ndigits=2)
+        original_format = path_original[path_original.rfind(".") + 1:]
+
+        audio_info :dict = {
+            'user_name': user_name,  # Имя пользователя
+            'trek_name': trek_name,  # Название трека
+            'original_format': original_format,  # Формат исходного файла
+            'path_original': path_original,  # Путь к оригинальному файлу
+            'path_convert': path_convert,  # Путь к конвертированному файлу
+            'format': frmt,  # Формат конвертированного файла
+            'move': self.move,  # Флаг перемещения исходного файла в директорию оригиналов
+            'date': date,  # Дата и время конвертирования
+            'original_size_b': orig_size_b,  # Размер оригинального файла в байтах.
+            'original_size_mb': orig_size_mb,  # Размер оригинального файла в мегабайтах.
+            'convert_size_b': convert_size_b,  # Рамзер конвертированного файла в байтах.
+            'convert_size_mb': convert_size_mb,  # Рамзер конвертированного файла в мегабайтах.
+        }
+        print(audio_info)
+        return audio_info
 
 
     @classmethod
