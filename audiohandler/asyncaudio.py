@@ -65,33 +65,34 @@ class AsyncAudioConverter(AudioConverter):
 
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
-        trek_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
-        trek_frmt: str = frmt.lower()
-        outpt:str = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
+        audio_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
+        audio_frmt: str = frmt.lower()
+        outpt:str = f"{os.path.join(user_dirs['user_dir_convert'], audio_name)}.{audio_frmt}"
 
         # Конвертируем трек
         result_subprocess = subprocess.Popen(['ffmpeg', '-i', pathsound, outpt], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+        await asyncio.sleep(1 / 1000)
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
             except shutil.Error:
                 os.remove(os.path.join(user_dirs['user_dir_orig'],os.path.split(pathsound)[1]))
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
+            audio_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
         await asyncio.sleep(1 / 1000)
 
-        await asyncio.sleep(1 / 1000)
+
         # Запись данных об операции в словарь.
-        result: dict = self.get_audio_info(user_name=name, trek_name=trek_name, path_original=trek_orig, frmt=trek_frmt,
+        result: dict = self.get_audio_info(user_name=name, audio_name=audio_name, path_original=audio_orig, frmt=audio_frmt,
                                            path_convert=outpt)
         result.update(result_subprocess=result_subprocess) #Резульатат работы субпроцесса
 
         # Запись в бд информации о конвертированном файле
+        await asyncio.sleep(1 / 1000)
         if self.wirte_db == True:
             await self.db.ainsert_audio(result)
 
@@ -120,7 +121,7 @@ class AsyncAudioConverter(AudioConverter):
         # Пути хранения треков
         user_dirs :dict = self.create_user_dir(name=name)
         video_name: str = pathvideo[pathvideo.rfind("/") + 1:pathvideo.rfind(".")].replace(" ", "_")
-        trek_frmt: str = frmt.lower()
+        video_frmt: str = frmt.lower()
         output = f"{os.path.join(user_dirs['user_dir_convert'], video_name)}.{frmt}"
 
         subprocess.Popen(["ffmpeg", "-y", "-i", pathvideo, output],
@@ -132,16 +133,16 @@ class AsyncAudioConverter(AudioConverter):
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
             except shutil.Error:
                 os.remove(user_dirs['user_dir_orig'] + pathvideo[pathvideo.rfind("/"):])
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
+            audio_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
 
         # Запись данных об операции в словарь.
-        result: dict = self.get_audio_info(user_name=name, trek_name=video_name, path_original=trek_orig, frmt=trek_frmt,
+        result: dict = self.get_audio_info(user_name=name, audio_name=video_name, path_original=audio_orig, frmt=video_frmt,
                                            path_convert=output)
 
         # Запись в бд информации о конвертированном файле

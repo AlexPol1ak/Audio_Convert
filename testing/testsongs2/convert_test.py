@@ -15,7 +15,7 @@ settings = {
         }
 
 
-# converter = AudioConverter(settings)  # synchronous converter
+converter = AudioConverter(settings)  # synchronous converter
 asnc_converter = AsyncAudioConverter(settings) # asynchronous converter
 
 #file list
@@ -44,27 +44,27 @@ print(f'Numbers of audio {len(audiofiles)}',audiofiles) # <--- 24 audio
 ########################################################################################################################
                                                 # asynchronous converter
 
-async def main():
-    tasks = []
-    for audio in audiofiles:
-        task = asyncio.create_task(asnc_converter.aconvert(pathsound=audio, frmt='wav', name='aAdmin'))
-        tasks.append(task)
-
-
-    print('The tasks were created by')
-    r = await asyncio.gather(*tasks)
-    print('Conversion complete')
-    return r
-
-
-start_time = time.time()
-res = asyncio.run(main())
-end_time = time.time() - start_time
-
-print('Asynchronous converter.\n', f"The {len(audiofiles)} audio take seconds to complete:  ", end_time)
-# 24 audio, 2.719 seconds, Wow:)
-print(res)
-
+# async def main():
+#     tasks = []
+#     for audio in audiofiles:
+#         task = asyncio.create_task(asnc_converter.aconvert(pathsound=audio, frmt='wav', name='aAdmin'))
+#         tasks.append(task)
+#
+#
+#     print('The tasks were created by')
+#     r = await asyncio.gather(*tasks)
+#     print('Conversion complete')
+#     return r
+#
+#
+# start_time = time.time()
+# res = asyncio.run(main())
+# end_time = time.time() - start_time
+#
+# print('Asynchronous converter.\n', f"The {len(audiofiles)} audio take seconds to complete:  ", end_time)
+# # 24 audio, 2.719 seconds, Wow:)
+# print(res)
+#
 
 ########################################################################################################################
                                     # Extract audio from video in synchronous mode

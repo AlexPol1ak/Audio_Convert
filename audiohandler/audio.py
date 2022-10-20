@@ -137,28 +137,28 @@ class AudioConverter():
         user_dirs :dict = self.create_user_dir(name=name)
 
         #Чистое название аудиофайла  полученое из пути, без формата и пути . Пример. << testsong1
-        trek_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
-        trek_frmt: str = frmt.lower()
-        export_path = f"{os.path.join(user_dirs['user_dir_convert'], trek_name)}.{trek_frmt}"
+        audio_name: str = os.path.splitext(os.path.split(pathsound)[1].replace(" ", "_"))[0]
+        audio_frmt: str = frmt.lower()
+        export_path = f"{os.path.join(user_dirs['user_dir_convert'], audio_name)}.{audio_frmt}"
 
-        trek = AudioSegment.from_file(pathsound)
-        trek.export(export_path, format=trek_frmt)
+        audio = AudioSegment.from_file(pathsound)
+        audio.export(export_path, format=audio_frmt)
 
         # Флаг move определяет перемещение либо копирование исходного файла в директорию оригиналов
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
 
             except shutil.Error:
                 os.remove(os.path.join(user_dirs['user_dir_orig'],os.path.split(pathsound)[1]))
-                trek_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathsound, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
+            audio_orig = shutil.copy(pathsound, user_dirs['user_dir_orig'])
 
         # Запись данных об операции в словарь.
-        result :dict = self.get_audio_info(user_name=name,trek_name=trek_name,path_original=trek_orig,frmt=trek_frmt,
+        result :dict = self.get_audio_info(user_name=name, audio_name=audio_name, path_original=audio_orig, frmt=audio_frmt,
                                            path_convert=export_path)
         # Запись в бд информации о конвертированном файле
         if self.wirte_db == True:
@@ -178,7 +178,7 @@ class AudioConverter():
         user_dirs :dict = self.create_user_dir(name=name)
         # получение чистого имени файла и формата.
         video_name: str = os.path.splitext(os.path.split(pathvideo)[1].replace(" ", "_"))[0]
-        trek_frmt: str = frmt.lower()
+        audio_frmt: str = frmt.lower()
         output_v = f"{os.path.join(user_dirs['user_dir_convert'], video_name)}.{frmt}"
 
         subprocess.call(["ffmpeg", "-y", "-i", pathvideo, output_v],
@@ -188,16 +188,16 @@ class AudioConverter():
         if self.move == True:
             # Переместить трек в директорию оригиналов,если он там существует- перезаписать
             try:
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
             except shutil.Error:
                 os.remove(user_dirs['user_dir_orig'] + pathvideo[pathvideo.rfind("/"):])
-                trek_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
+                audio_orig = shutil.move(pathvideo, user_dirs['user_dir_orig'])
         # Копировать если флаг False
         else:
-            trek_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
+            audio_orig = shutil.copy(pathvideo, user_dirs['user_dir_orig'])
 
         # Запись данных об операции в словарь.
-        result: dict = self.get_audio_info(user_name=name, trek_name=video_name, path_original=trek_orig, frmt=trek_frmt,
+        result: dict = self.get_audio_info(user_name=name, audio_name=video_name, path_original=audio_orig, frmt=audio_frmt,
                                            path_convert=output_v)
 
         # Запись в бд информации о конвертированном файле
@@ -206,7 +206,7 @@ class AudioConverter():
 
         return result
 
-    def get_audio_info(self, *, user_name:str, trek_name:str, path_original:str, frmt:str, path_convert:str) ->dict:
+    def get_audio_info(self, *, user_name:str, audio_name:str, path_original:str, frmt:str, path_convert:str) ->dict:
 
         path_original = os.path.normpath(path_original)
         path_convert = os.path.normpath(path_convert)
@@ -221,7 +221,7 @@ class AudioConverter():
 
         audio_info :dict = {
             'user_name': user_name,  # Имя пользователя
-            'trek_name': trek_name,  # Название трека
+            'audio_name': audio_name,  # Название трека
             'original_format': original_format,  # Формат исходного файла
             'path_original': path_original,  # Путь к оригинальному файлу
             'path_convert': path_convert,  # Путь к конвертированному файлу
@@ -233,7 +233,6 @@ class AudioConverter():
             'convert_size_b': convert_size_b,  # Рамзер конвертированного файла в байтах.
             'convert_size_mb': convert_size_mb,  # Рамзер конвертированного файла в мегабайтах.
         }
-
         return audio_info
 
 

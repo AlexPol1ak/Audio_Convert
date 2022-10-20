@@ -56,7 +56,7 @@ class AudioDB():
         query :str = """CREATE TABLE IF NOT EXISTS audio (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_name TEXT,
-                            trek_name TEXT,
+                            audio_name TEXT,
                             original_format TEXT,
                             path_original TEXT,
                             path_convert TEXT,
@@ -83,10 +83,10 @@ class AudioDB():
 
         query :str = f"""
                 INSERT INTO
-                audio (user_name, trek_name, original_format, path_original, path_convert, format, date,
+                audio (user_name, audio_name, original_format, path_original, path_convert, format, date,
                 original_size_b, original_size_mb, convert_size_b, convert_size_mb )
                 VALUES
-                ("{audio_dict['user_name']}", "{audio_dict['trek_name']}",
+                ("{audio_dict['user_name']}", "{audio_dict['audio_name']}",
                 "{audio_dict['original_format']}", "{audio_dict['path_original']}",
                 "{audio_dict['path_convert']}", "{audio_dict['format']}", "{audio_dict['date']}",
                 "{audio_dict['original_size_b']}", "{audio_dict['original_size_mb']}","{audio_dict['convert_size_b']}",
